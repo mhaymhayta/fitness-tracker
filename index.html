@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Training Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+Thai:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F5F2ED; --card: #FFFFFF; --green: #2D6A4F; --green-light: #D8F3DC;
+  --green-mid: #74C69D; --amber-dark: #8B6914; --text: #1A1A1A;
+  --muted: #888; --border: #E0DDD8; --radius: 16px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Noto Sans Thai', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 24px 16px 60px; }
+.app { max-width: 420px; margin: 0 auto; }
+
+.header { text-align: center; margin-bottom: 28px; padding-top: 8px; }
+.header-icon { font-size: 48px; margin-bottom: 8px; display: block; }
+.header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+.header-meta { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+.stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+.stat { background: var(--card); border-radius: 12px; padding: 14px 10px; text-align: center; border: 1px solid var(--border); }
+.stat-val { font-family: 'DM Mono', monospace; font-size: 26px; font-weight: 500; line-height: 1; }
+.stat-label { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+.progress-card { background: var(--card); border-radius: var(--radius); padding: 20px; margin-bottom: 20px; border: 1px solid var(--border); }
+.progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.progress-title { font-size: 13px; font-weight: 500; color: var(--muted); }
+.progress-count { font-family: 'DM Mono', monospace; font-size: 13px; }
+.progress-track { height: 8px; background: var(--bg); border-radius: 99px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--green); border-radius: 99px; transition: width 0.5s cubic-bezier(.34,1.56,.64,1); }
+.dots-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px; margin-top: 16px; }
+.dot { aspect-ratio: 1; border-radius: 6px; background: var(--bg); border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); }
+.dot.filled { background: var(--green); border-color: var(--green); color: #fff; }
+.dot.filled::after { content: '✓'; font-size: 11px; }
+
+.checkin-wrap { margin-bottom: 20px; }
+.checkin-btn { width: 100%; padding: 20px; background: var(--green); color: #fff; border: none; border-radius: var(--radius); font-family: 'Noto Sans Thai', sans-serif; font-size: 18px; font-weight: 700; cursor: pointer; transition: transform 0.1s, background 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.checkin-btn:hover { background: #245c44; }
+.checkin-btn:active { transform: scale(0.97); }
+.checkin-btn.checked { background: var(--green-light); color: var(--green); border: 2px solid var(--green-mid); }
+.checkin-btn.checked:hover { background: #c8edce; }
+.checkin-btn .icon { font-size: 22px; }
+.checkin-date { text-align: center; font-size: 12px; color: var(--muted); margin-top: 8px; }
+
+.calendar-card { background: var(--card); border-radius: var(--radius); padding: 20px; border: 1px solid var(--border); margin-bottom: 20px; }
+.cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.cal-title { font-size: 15px; font-weight: 700; }
+.cal-btns { display: flex; gap: 6px; }
+.cal-btn { height: 30px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); font-size: 14px; cursor: pointer; color: var(--text); padding: 0 10px; display: flex; align-items: center; }
+.cal-btn:hover { background: var(--border); }
+.cal-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.cal-table th { text-align: center; font-size: 11px; font-weight: 600; color: var(--muted); padding: 0 0 8px; }
+.cal-table th.wh { color: var(--green); }
+.cal-table td { padding: 2px; text-align: center; }
+.cal-day { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; margin: 0 auto; font-family: 'DM Mono', monospace; color: var(--text); transition: background 0.15s; }
+.cal-day.other { color: #ccc; }
+.cal-day.wo { font-weight: 700; cursor: pointer; }
+.cal-day.wo:not(.checked):not(.future):hover { background: var(--green-light); }
+.cal-day.checked { background: var(--green); color: #fff; cursor: pointer; }
+.cal-day.today { outline: 2px solid var(--green); outline-offset: 1px; }
+.cal-day.future { color: #bbb; cursor: default; font-weight: 600; }
+.cal-legend { display: flex; gap: 16px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+.leg { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+.leg-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+.log-card { background: var(--card); border-radius: var(--radius); padding: 20px; border: 1px solid var(--border); margin-bottom: 20px; }
+.log-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.log-title { font-size: 13px; font-weight: 500; color: var(--muted); }
+.log-toggle { font-size: 11px; color: var(--green); cursor: pointer; border: none; background: none; padding: 0; }
+.log-empty { font-size: 13px; color: var(--muted); text-align: center; padding: 12px 0; }
+.log-item { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.log-item:last-child { border-bottom: none; }
+.log-num { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); min-width: 28px; }
+.log-date { flex: 1; color: var(--text); }
+.log-undo { font-size: 11px; color: var(--muted); cursor: pointer; padding: 2px 8px; border-radius: 6px; border: 1px solid var(--border); background: none; white-space: nowrap; }
+.log-undo:hover { border-color: #e74c3c; color: #e74c3c; }
+
+/* New course button */
+.edit-btn { font-size: 11px; color: var(--muted); border: 1px solid var(--border); background: none; border-radius: 8px; padding: 3px 10px; cursor: pointer; margin-top: 6px; display: inline-block; }
+.edit-btn:hover { border-color: var(--green-mid); color: var(--green); }
+
+.new-course-btn { width: 100%; padding: 15px; background: none; border: 1.5px dashed var(--border); border-radius: var(--radius); font-family: 'Noto Sans Thai', sans-serif; font-size: 14px; color: var(--muted); cursor: pointer; transition: border-color 0.2s, color 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.new-course-btn:hover { border-color: var(--green-mid); color: var(--green); }
+
+/* Past courses */
+.past-section { margin-top: 28px; }
+.past-title { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 10px; }
+.past-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 10px; }
+.past-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.past-name { font-size: 14px; font-weight: 700; }
+.past-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.past-badge { font-size: 11px; padding: 3px 9px; border-radius: 20px; font-weight: 500; }
+.past-badge-done { background: var(--green-light); color: var(--green); }
+.past-badge-partial { background: #FEF3C7; color: var(--amber-dark); }
+.past-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.past-stat { background: var(--bg); border-radius: 8px; padding: 8px 10px; text-align: center; }
+.past-stat-val { font-family: 'DM Mono', monospace; font-size: 17px; font-weight: 500; }
+.past-stat-label { font-size: 10px; color: var(--muted); margin-top: 2px; }
+.past-prog-track { height: 5px; background: var(--bg); border-radius: 99px; overflow: hidden; border: 1px solid var(--border); }
+.past-prog-fill { height: 100%; border-radius: 99px; background: var(--green); }
+.past-dates { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 6px; }
+.past-toggle { font-size: 11px; color: var(--green); cursor: pointer; border: none; background: none; padding: 0; margin-top: 10px; display: block; }
+.past-sessions { margin-top: 8px; max-height: 0; overflow: hidden; transition: max-height 0.3s; }
+.past-sessions.open { max-height: 400px; }
+.past-sess-item { font-size: 12px; color: var(--muted); padding: 4px 0; border-bottom: 1px solid var(--border); display: flex; gap: 8px; }
+.past-sess-item:last-child { border-bottom: none; }
+.past-sess-num { font-family: 'DM Mono', monospace; min-width: 24px; }
+
+/* Modal */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; align-items: flex-end; justify-content: center; padding: 0; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--card); border-radius: var(--radius) var(--radius) 0 0; padding: 28px 24px 40px; width: 100%; max-width: 420px; }
+.modal h2 { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+.modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 22px; }
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; font-weight: 500; }
+.field input { width: 100%; padding: 11px 13px; border: 1px solid var(--border); border-radius: 10px; font-family: 'Noto Sans Thai', sans-serif; font-size: 15px; color: var(--text); background: var(--bg); outline: none; }
+.field input:focus { border-color: var(--green-mid); }
+.modal-btns { display: flex; gap: 8px; margin-top: 20px; }
+.btn-cancel { flex: 1; padding: 13px; border: 1px solid var(--border); border-radius: 10px; background: none; font-family: 'Noto Sans Thai', sans-serif; font-size: 14px; color: var(--muted); cursor: pointer; }
+.btn-cancel:hover { background: var(--bg); }
+.btn-confirm { flex: 2; padding: 13px; background: var(--green); border: none; border-radius: 10px; font-family: 'Noto Sans Thai', sans-serif; font-size: 15px; font-weight: 700; color: #fff; cursor: pointer; }
+.btn-confirm:hover { background: #245c44; }
+
+.badge { display: inline-block; font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 500; margin-left: 8px; }
+.badge-green { background: var(--green-light); color: var(--green); }
+.badge-amber { background: #FEF3C7; color: var(--amber-dark); }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <span class="header-icon" id="hd-icon">💪</span>
+    <h1 id="hd-title">Training <span class="badge badge-green" id="status-badge">🟢 ยังมีเหลือ</span></h1>
+    <div class="header-meta" id="hd-meta"></div>
+    <button class="edit-btn" onclick="openEditModal()">✎ แก้ไขข้อมูลคอร์ส</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-val" id="s-used">0</div><div class="stat-label">ใช้แล้ว</div></div>
+    <div class="stat"><div class="stat-val" id="s-rem">0</div><div class="stat-label">เหลือ</div></div>
+    <div class="stat"><div class="stat-val" id="s-pct">0%</div><div class="stat-label">คืบหน้า</div></div>
+  </div>
+
+  <div class="progress-card">
+    <div class="progress-header">
+      <span class="progress-title">ความคืบหน้า</span>
+      <span class="progress-count" id="prog-count">0 / 0</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+    <div class="dots-grid" id="dots-grid"></div>
+  </div>
+
+  <div class="checkin-wrap">
+    <button class="checkin-btn" id="checkin-btn" onclick="checkIn()">
+      <span class="icon" id="ci-icon">＋</span>
+      <span id="ci-label">เช็คอินวันนี้</span>
+    </button>
+    <div class="checkin-date" id="ci-date"></div>
+  </div>
+
+  <div class="calendar-card">
+    <div class="cal-nav">
+      <div class="cal-title" id="cal-title"></div>
+      <div class="cal-btns">
+        <button class="cal-btn" onclick="calNav(-1)">‹</button>
+        <button class="cal-btn" onclick="calNav(0)" style="font-size:11px">วันนี้</button>
+        <button class="cal-btn" onclick="calNav(1)">›</button>
+      </div>
+    </div>
+    <table class="cal-table">
+      <thead><tr>
+        <th>อา</th><th class="wh">จ</th><th>อ</th><th>พ</th><th class="wh">พฤ</th><th>ศ</th><th class="wh">ส</th>
+      </tr></thead>
+      <tbody id="cal-body"></tbody>
+    </table>
+    <div class="cal-legend">
+      <div class="leg"><div class="leg-dot" style="background:var(--green)"></div>เช็คอินแล้ว</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--green-light);border:1.5px solid var(--green-mid)"></div>วันออกกำลังกาย</div>
+    </div>
+  </div>
+
+  <div class="log-card">
+    <div class="log-header">
+      <div class="log-title">ประวัติการเช็คอิน</div>
+      <button class="log-toggle" id="log-toggle" onclick="toggleLog()">ดูทั้งหมด</button>
+    </div>
+    <div id="log-list"></div>
+  </div>
+
+  <button class="new-course-btn" onclick="openModal()" style="margin-top:12px">
+    <span style="font-size:16px">＋</span> เริ่มคอร์สใหม่
+  </button>
+
+  <div class="past-section" id="past-section" style="display:none">
+    <div class="past-title">คอร์สที่ผ่านมา</div>
+    <div id="past-list"></div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <h2>เริ่มคอร์สใหม่</h2>
+    <div class="modal-sub">ข้อมูลคอร์สเก่าจะถูกเก็บไว้เป็นประวัติ</div>
+    <div class="field">
+      <label>ชื่อคอร์ส</label>
+      <input id="f-name" type="text" placeholder="เช่น Training, Yoga, Muay Thai"/>
+    </div>
+    <div class="field">
+      <label>จำนวนครั้งในคอร์ส</label>
+      <input id="f-total" type="number" min="1" placeholder="เช่น 80"/>
+    </div>
+    <div class="field">
+      <label>วันที่ซื้อ</label>
+      <input id="f-date" type="date"/>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn-confirm" onclick="startNewCourse()">เริ่มคอร์สใหม่</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="edit-overlay" onclick="handleEditOverlay(event)">
+  <div class="modal">
+    <h2>แก้ไขคอร์สปัจจุบัน</h2>
+    <div class="modal-sub">แก้ไขได้เฉพาะชื่อ จำนวนครั้ง และวันที่ซื้อ</div>
+    <div class="field">
+      <label>ชื่อคอร์ส</label>
+      <input id="e-name" type="text"/>
+    </div>
+    <div class="field">
+      <label>จำนวนครั้งในคอร์ส</label>
+      <input id="e-total" type="number" min="1"/>
+    </div>
+    <div class="field">
+      <label>วันที่ซื้อ</label>
+      <input id="e-date" type="date"/>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeEditModal()">ยกเลิก</button>
+      <button class="btn-confirm" onclick="saveEdit()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const WORKOUT = [1, 4, 6];
+const DAYS_TH = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+const MONTHS_TH = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
+function loadData() {
+  try { return JSON.parse(localStorage.getItem('training_data_v2') || 'null'); } catch(e) { return null; }
+}
+function saveData(data) { localStorage.setItem('training_data_v2', JSON.stringify(data)); }
+
+let data = loadData();
+if (!data) {
+  data = {
+    current: { name: 'Training', total: 80, bought: '2025-04-01', sessions: [] },
+    history: []
+  };
+  // migrate old key if exists
+  try {
+    const old = JSON.parse(localStorage.getItem('training_sessions_v1') || '[]');
+    if (old.length) data.current.sessions = old;
+  } catch(e) {}
+  saveData(data);
+}
+
+let calY = new Date().getFullYear(), calM = new Date().getMonth();
+let showAll = false;
+
+function todayStr() { return new Date().toISOString().slice(0,10); }
+function fmtDate(iso) {
+  const d = new Date(iso + 'T00:00:00');
+  return `${DAYS_TH[d.getDay()]} ${d.getDate()} ${MONTHS_TH[d.getMonth()]} ${d.getFullYear()+543}`;
+}
+function fmtShort(iso) {
+  const d = new Date(iso + 'T00:00:00');
+  return `${d.getDate()} ${MONTHS_TH[d.getMonth()]} ${d.getFullYear()+543}`;
+}
+
+function checkIn() {
+  const t = todayStr(), s = data.current.sessions;
+  if (s.includes(t)) { data.current.sessions = s.filter(x => x !== t); }
+  else if (s.length < data.current.total) { s.push(t); s.sort(); }
+  saveData(data); render();
+}
+
+function removeSession(iso) {
+  data.current.sessions = data.current.sessions.filter(s => s !== iso);
+  saveData(data); render();
+}
+
+function toggleCalDay(iso) {
+  const s = data.current.sessions;
+  if (s.includes(iso)) { data.current.sessions = s.filter(x => x !== iso); }
+  else if (s.length < data.current.total) { s.push(iso); s.sort(); }
+  saveData(data); render();
+}
+
+function calNav(d) {
+  if (d===0){const n=new Date();calY=n.getFullYear();calM=n.getMonth();}
+  else{calM+=d;if(calM>11){calM=0;calY++;}else if(calM<0){calM=11;calY--;}}
+  renderCal();
+}
+
+function toggleLog() { showAll=!showAll; renderLog(); }
+
+function openModal() {
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-total').value = '';
+  document.getElementById('f-date').value = todayStr();
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+function handleOverlayClick(e) { if (e.target === document.getElementById('modal-overlay')) closeModal(); }
+
+function startNewCourse() {
+  const name = document.getElementById('f-name').value.trim();
+  const total = parseInt(document.getElementById('f-total').value);
+  const bought = document.getElementById('f-date').value;
+  if (!name || !total || total < 1) { alert('กรุณาใส่ชื่อคอร์สและจำนวนครั้ง'); return; }
+  data.history.unshift({ ...data.current, endedAt: todayStr() });
+  data.current = { name, total, bought, sessions: [] };
+  saveData(data); closeModal(); showAll = false; render();
+}
+
+function renderHeader() {
+  const c = data.current;
+  document.getElementById('hd-icon').textContent = '💪';
+  document.getElementById('hd-title').innerHTML = `${c.name} <span class="badge badge-green" id="status-badge"></span>`;
+  const bought = c.bought ? `ซื้อ ${fmtShort(c.bought)} · ` : '';
+  document.getElementById('hd-meta').textContent = `${bought}${c.total} ครั้ง`;
+}
+
+function renderStats() {
+  const c = data.current;
+  const used=c.sessions.length, rem=c.total-used, pct=Math.round(used/c.total*100);
+  document.getElementById('s-used').textContent=used;
+  document.getElementById('s-rem').textContent=rem;
+  document.getElementById('s-pct').textContent=pct+'%';
+  document.getElementById('prog-count').textContent=`${used} / ${c.total}`;
+  document.getElementById('prog-fill').style.width=pct+'%';
+  const b=document.getElementById('status-badge');
+  if(rem===0){b.textContent='✅ ครบแล้ว';b.className='badge badge-green';}
+  else if(rem<=Math.ceil(c.total*0.1)){b.textContent=`🟡 เหลือ ${rem}`;b.className='badge badge-amber';}
+  else{b.textContent='🟢 ยังมีเหลือ';b.className='badge badge-green';}
+}
+
+function renderDots() {
+  const c = data.current;
+  const g=document.getElementById('dots-grid'); g.innerHTML='';
+  for(let i=0;i<c.total;i++){
+    const d=document.createElement('div');
+    d.className='dot'+(i<c.sessions.length?' filled':'');
+    if(i>=c.sessions.length)d.textContent=i+1;
+    if(c.sessions[i])d.title=fmtDate(c.sessions[i]);
+    g.appendChild(d);
+  }
+}
+
+function renderCheckin() {
+  const t=todayStr(), done=data.current.sessions.includes(t);
+  const btn=document.getElementById('checkin-btn');
+  btn.className='checkin-btn'+(done?' checked':'');
+  document.getElementById('ci-icon').textContent=done?'✓':'＋';
+  document.getElementById('ci-label').textContent=done?'เช็คอินแล้ววันนี้':'เช็คอินวันนี้';
+  document.getElementById('ci-date').textContent=done
+    ?`${fmtDate(t)} — กดอีกครั้งเพื่อยกเลิก`:`วันนี้: ${fmtDate(t)}`;
+}
+
+function renderCal() {
+  document.getElementById('cal-title').textContent=`${MONTHS_TH[calM]} ${calY+543}`;
+  const todayISO=todayStr(), now=new Date(); now.setHours(0,0,0,0);
+  const firstDay=new Date(calY,calM,1).getDay();
+  const daysInMonth=new Date(calY,calM+1,0).getDate();
+  const prevDays=new Date(calY,calM,0).getDate();
+  const totalCells=Math.ceil((firstDay+daysInMonth)/7)*7;
+  let html='<tr>';
+  for(let i=0;i<totalCells;i++){
+    if(i>0&&i%7===0) html+='</tr><tr>';
+    let day,mo=calM,yr=calY,other=false;
+    if(i<firstDay){day=prevDays-firstDay+i+1;mo=calM-1;if(mo<0){mo=11;yr--;}other=true;}
+    else if(i>=firstDay+daysInMonth){day=i-firstDay-daysInMonth+1;mo=calM+1;if(mo>11){mo=0;yr++;}other=true;}
+    else{day=i-firstDay+1;}
+    const iso=`${yr}-${String(mo+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const dt=new Date(yr,mo,day), dow=dt.getDay();
+    const isWO=WORKOUT.includes(dow), isChecked=data.current.sessions.includes(iso);
+    const isToday=iso===todayISO, isFuture=dt>now;
+    let cls='cal-day';
+    if(other)cls+=' other';
+    else if(isChecked)cls+=' wo checked';
+    else if(isWO&&isFuture)cls+=' wo future';
+    else if(isWO)cls+=' wo';
+    if(isToday&&!other)cls+=' today';
+    const clickable=isWO&&!other&&!isFuture;
+    html+=`<td><div class="${cls}"${clickable?` onclick="toggleCalDay('${iso}')"`:''}>${day}</div></td>`;
+  }
+  html+='</tr>';
+  document.getElementById('cal-body').innerHTML=html;
+}
+
+function renderLog() {
+  const el=document.getElementById('log-list'), tog=document.getElementById('log-toggle');
+  const sessions=data.current.sessions;
+  if(!sessions.length){el.innerHTML='<div class="log-empty">ยังไม่มีการเช็คอิน</div>';tog.style.display='none';return;}
+  tog.style.display='block';
+  const list=[...sessions].reverse();
+  const shown=showAll?list:list.slice(0,6);
+  el.innerHTML=shown.map((iso,i)=>{
+    const num=sessions.length-i;
+    return `<div class="log-item">
+      <span class="log-num">#${num}</span>
+      <span class="log-date">${fmtDate(iso)}</span>
+      <button class="log-undo" onclick="removeSession('${iso}')">ยกเลิก</button>
+    </div>`;
+  }).join('');
+  tog.textContent=showAll?'ย่อลง':`ดูทั้งหมด ${sessions.length} ครั้ง`;
+}
+
+function togglePastLog(i) {
+  const el = document.getElementById('past-log-'+i);
+  const btn = document.getElementById('past-tog-'+i);
+  if (!el) return;
+  el.classList.toggle('open');
+  btn.textContent = el.classList.contains('open') ? 'ซ่อนประวัติ ▲' : 'ดูประวัติการเช็คอิน ▼';
+}
+
+function renderPast() {
+  const sec=document.getElementById('past-section'), list=document.getElementById('past-list');
+  if(!data.history.length){sec.style.display='none';return;}
+  sec.style.display='block';
+  list.innerHTML=data.history.map((h,i)=>{
+    const used=h.sessions.length, total=h.total;
+    const pct=Math.round(used/total*100);
+    const done=used===total;
+    const firstDate=h.sessions.length?fmtShort(h.sessions[0]):'—';
+    const lastDate=h.sessions.length?fmtShort(h.sessions[h.sessions.length-1]):'—';
+    const boughtStr=h.bought?fmtShort(h.bought):'—';
+    const endedStr=h.endedAt?fmtShort(h.endedAt):'—';
+    const sessLog=[...h.sessions].reverse().map((iso,si)=>`
+      <div class="past-sess-item">
+        <span class="past-sess-num">#${h.sessions.length-si}</span>
+        <span>${fmtDate(iso)}</span>
+      </div>`).join('');
+    return `<div class="past-item">
+      <div class="past-top">
+        <div>
+          <div class="past-name">💪 ${h.name}</div>
+          <div class="past-meta">ซื้อ ${boughtStr} · เริ่มคอร์สใหม่ ${endedStr}</div>
+        </div>
+        <span class="past-badge ${done?'past-badge-done':'past-badge-partial'}">${done?'✅ ครบแล้ว':'⏳ '+pct+'%'}</span>
+      </div>
+      <div class="past-stats">
+        <div class="past-stat"><div class="past-stat-val">${used}</div><div class="past-stat-label">ใช้แล้ว</div></div>
+        <div class="past-stat"><div class="past-stat-val">${total-used}</div><div class="past-stat-label">คงเหลือ</div></div>
+        <div class="past-stat"><div class="past-stat-val">${pct}%</div><div class="past-stat-label">คืบหน้า</div></div>
+      </div>
+      <div class="past-prog-track"><div class="past-prog-fill" style="width:${pct}%"></div></div>
+      <div class="past-dates"><span>เริ่มใช้ ${firstDate}</span><span>ครั้งสุดท้าย ${lastDate}</span></div>
+      ${used>0?`<button class="past-toggle" id="past-tog-${i}" onclick="togglePastLog(${i})">ดูประวัติการเช็คอิน ▼</button>
+      <div class="past-sessions" id="past-log-${i}">${sessLog}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function render() { renderHeader(); renderStats(); renderDots(); renderCheckin(); renderCal(); renderLog(); renderPast(); }
+render();
+</script>
+</body>
+</html>
