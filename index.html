@@ -134,9 +134,9 @@ body { font-family: 'Noto Sans Thai', sans-serif; background: var(--bg); color: 
 <div class="app">
   <div class="header">
     <span class="header-icon" id="hd-icon">💪</span>
-    <h1 id="hd-title">Training <span class="badge badge-green" id="status-badge">🟢 ยังมีเหลือ</span></h1>
+    <h1 id="hd-title"><span id="hd-name">Training</span> <span class="badge badge-green" id="status-badge">🟢 ยังมีเหลือ</span></h1>
     <div class="header-meta" id="hd-meta"></div>
-    <button class="edit-btn" onclick="openEditModal()">✎ แก้ไขข้อมูลคอร์ส</button>
+    <button class="edit-btn" id="edit-btn" onclick="openEditModal()">✎ แก้ไขข้อมูลคอร์ส</button>
   </div>
 
   <div class="stats">
@@ -335,7 +335,7 @@ function startNewCourse() {
 function renderHeader() {
   const c = data.current;
   document.getElementById('hd-icon').textContent = '💪';
-  document.getElementById('hd-title').innerHTML = `${c.name} <span class="badge badge-green" id="status-badge"></span>`;
+  document.getElementById('hd-name').textContent = c.name;
   const bought = c.bought ? `ซื้อ ${fmtShort(c.bought)} · ` : '';
   document.getElementById('hd-meta').textContent = `${bought}${c.total} ครั้ง`;
 }
