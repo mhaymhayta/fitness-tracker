@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Training Tracker</title>
+<title>Personal Training Tracker</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+Thai:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -285,7 +285,7 @@ function saveData(d) { localStorage.setItem('training_data_v3', JSON.stringify(d
 
 let data = loadData();
 if (!data) {
-  data = { current: { name: 'Training', total: 80, bought: '2025-04-01', sessions: [] }, history: [] };
+  data = { current: { name: 'Personal Training', total: 80, bought: '2025-04-01', sessions: [] }, history: [] };
   try { const old = JSON.parse(localStorage.getItem('training_data_v2') || 'null'); if(old) data = old; } catch(e) {}
   saveData(data);
 }
