@@ -289,6 +289,11 @@ if (!data) {
   try { const old = JSON.parse(localStorage.getItem('training_data_v2') || 'null'); if(old) data = old; } catch(e) {}
   saveData(data);
 }
+// Always update name to latest
+if (data.current.name === 'Training') {
+  data.current.name = 'Personal Training';
+  saveData(data);
+}
 
 let calY = new Date().getFullYear(), calM = new Date().getMonth(), showAll = false;
 let selectedSlot = null;
