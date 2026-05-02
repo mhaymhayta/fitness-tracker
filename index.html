@@ -59,11 +59,12 @@ body { font-family: 'Noto Sans Thai', sans-serif; background: var(--bg); color: 
 .cal-table td { padding: 2px; text-align: center; }
 .cal-day { width: 34px; min-height: 36px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; margin: 0 auto; font-family: 'DM Mono', monospace; color: var(--text); transition: background 0.15s; padding: 2px 0; }
 .cal-day.other { color: #ccc; }
-.cal-day.wo { font-weight: 700; cursor: pointer; }
-.cal-day.wo:not(.checked):not(.future):hover { background: var(--green-light); border-radius: 8px; }
+.cal-day.selectable { cursor: pointer; }
+.cal-day.selectable:hover { background: var(--green-light); border-radius: 8px; }
 .cal-day.checked { background: var(--green); color: #fff; cursor: pointer; }
+.cal-day.checked:hover { background: #245c44; }
 .cal-day.today { outline: 2px solid var(--green); outline-offset: 1px; border-radius: 8px; }
-.cal-day.future { color: #bbb; cursor: default; font-weight: 600; }
+.cal-day.future { color: #bbb; cursor: default; }
 .cal-time { font-size: 7px; line-height: 1; opacity: 0.9; margin-top: 1px; white-space: nowrap; }
 .cal-legend { display: flex; gap: 16px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
 .leg { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
@@ -186,13 +187,13 @@ body { font-family: 'Noto Sans Thai', sans-serif; background: var(--bg); color: 
     </div>
     <table class="cal-table">
       <thead><tr>
-        <th>Su</th><th class="wh">Mo</th><th>Tu</th><th>We</th><th class="wh">Th</th><th>Fr</th><th class="wh">Sa</th>
+        <th>Su</th><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sa</th>
       </tr></thead>
       <tbody id="cal-body"></tbody>
     </table>
     <div class="cal-legend">
       <div class="leg"><div class="leg-dot" style="background:var(--green)"></div>Checked in</div>
-      <div class="leg"><div class="leg-dot" style="background:var(--green-light);border:1.5px solid var(--green-mid)"></div>Workout day</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--green-light);border:1.5px solid var(--green-mid)"></div>Tap to check in</div>
     </div>
   </div>
 
@@ -506,11 +507,11 @@ function renderCal() {
     const isChecked=!!calSess, isToday=iso===todayISO, isFuture=dt>now;
     let cls='cal-day';
     if(other) cls+=' other';
-    else if(isChecked) cls+=' wo checked';
-    else if(isWO&&isFuture) cls+=' wo future';
-    else if(isWO) cls+=' wo';
+    else if(isChecked) cls+=' checked';
+    else if(isFuture) cls+=' future';
+    else cls+=' selectable';
     if(isToday&&!other) cls+=' today';
-    const clickable=isWO&&!other&&!isFuture;
+    const clickable=!other&&!isFuture;
     const t=calSess?sessTime(calSess):'';
     const timeTag=t?`<div class="cal-time">${t.replace(' AM','a').replace(' PM','p').replace(' – ','–')}</div>`:'';
     html+=`<td><div class="${cls}"${clickable?` onclick="toggleCalDay('${iso}')"`:''}><div>${isChecked?'✓':day}</div>${timeTag}</div></td>`;
