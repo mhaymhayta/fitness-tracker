@@ -312,6 +312,7 @@ function handleCheckin() {
     data.current.sessions = data.current.sessions.filter(x => sessDate(x) !== t);
     saveData(data); render();
   } else {
+    pendingCalDate = null;
     openTimeModal();
   }
 }
@@ -321,6 +322,7 @@ function openTimeModal() {
   renderTimeSlots();
   document.getElementById('custom-start').value = '08:00';
   document.getElementById('custom-end').value = '09:00';
+  document.querySelector('#time-overlay .modal-sub').textContent = 'Pick a slot or set a custom time';
   document.getElementById('time-overlay').classList.add('open');
 }
 function closeTimeModal() { document.getElementById('time-overlay').classList.remove('open'); }
@@ -358,21 +360,27 @@ function removeSession(iso) {
   data.current.sessions = data.current.sessions.filter(s => sessDate(s) !== iso);
   saveData(data); render();
 }
+let pendingCalDate = null;
+
 function toggleCalDay(iso) {
   const exists = data.current.sessions.find(x => sessDate(x) === iso);
-  if (exists) { data.current.sessions = data.current.sessions.filter(x => sessDate(x) !== iso); saveData(data); render(); }
-  else { pendingCalDate = iso; openTimeModalFor(iso); }
+  if (exists) {
+    data.current.sessions = data.current.sessions.filter(x => sessDate(x) !== iso);
+    saveData(data); render();
+  } else {
+    pendingCalDate = iso;
+    selectedSlot = null;
+    renderTimeSlots();
+    document.getElementById('custom-start').value = '08:00';
+    document.getElementById('custom-end').value = '09:00';
+    // Show selected date in modal subtitle
+    const d = new Date(iso+'T00:00:00');
+    document.querySelector('#time-overlay .modal-sub').textContent = fmtDate(iso);
+    document.getElementById('time-overlay').classList.add('open');
+  }
 }
-let pendingCalDate = null;
-function openTimeModalFor(iso) {
-  selectedSlot = null;
-  renderTimeSlots();
-  document.getElementById('custom-start').value = '08:00';
-  document.getElementById('custom-end').value = '09:00';
-  document.getElementById('time-overlay').classList.add('open');
-}
-const origConfirm = window.confirmCheckin;
-window.confirmCheckin = function() {
+
+function confirmCheckin() {
   const target = pendingCalDate || todayStr();
   const start = document.getElementById('custom-start').value;
   const end = document.getElementById('custom-end').value;
@@ -384,7 +392,7 @@ window.confirmCheckin = function() {
   }
   pendingCalDate = null;
   saveData(data); closeTimeModal(); render();
-};
+}
 
 function calNav(d) {
   if(d===0){const n=new Date();calY=n.getFullYear();calM=n.getMonth();}
